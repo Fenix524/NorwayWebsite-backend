@@ -1,23 +1,14 @@
-import { LandmarkPage } from '../models/LandmarkPage.js'
-import { createCRUDHandler, CRUDOpertion } from '../utils/CRUD.js'
+import { LandmarkPage } from "../models/LandmarkPage.js";
+import {
+  createDocument,
+  deleteDocument,
+  getAllDocuments,
+  getOneDocument,
+  updateDocument,
+} from "../utils/CRUD.js";
 
-export const getAllLandmarks = createCRUDHandler(
-	LandmarkPage,
-	CRUDOpertion.GET_ALL
-)
-export const getOneLandmark = createCRUDHandler(
-	LandmarkPage,
-	CRUDOpertion.GET_BY_ID
-)
-export const deleteLandmark = createCRUDHandler(
-	LandmarkPage,
-	CRUDOpertion.DELETE
-)
-export const createLandmark = createCRUDHandler(
-	LandmarkPage,
-	CRUDOpertion.CREATE
-)
-export const updateLandmark = createCRUDHandler(
-	LandmarkPage,
-	CRUDOpertion.UPDATE
-)
+export const getAllLandmarks = getAllDocuments(LandmarkPage);
+export const getOneLandmark = getOneDocument(LandmarkPage);
+export const deleteLandmark = createDocument(LandmarkPage);
+export const createLandmark = deleteDocument(LandmarkPage);
+export const updateLandmark = updateDocument(LandmarkPage);

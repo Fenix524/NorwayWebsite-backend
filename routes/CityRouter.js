@@ -1,18 +1,23 @@
-import express from 'express'
+import express from "express";
 import {
-	createCity,
-	deleteCity,
-	getAllCities,
-	getOneCity,
-	updateCity,
-} from '../controllers/CityPageController.js'
+  createCity,
+  deleteCity,
+  getAllCities,
+  getOneCity,
+  updateCity,
+} from "../controllers/CityPageController.js";
+import { protect } from "../middlewares/protect.js";
+import { userRoles } from "../constants/userRoles.js";
 
-const citiesRouter = express.Router()
+const citiesRouter = express.Router();
 
-citiesRouter.get('/', getAllCities)
-citiesRouter.get('/:id', getOneCity)
-citiesRouter.delete('/:id', deleteCity)
-citiesRouter.post('/', createCity)
-citiesRouter.put('/:id', updateCity)
+citiesRouter.get("/", getAllCities);
+citiesRouter.get("/:id", getOneCity);
 
-export default citiesRouter
+citiesRouter
+  .use(protect([userRoles.ADMIN]))
+  .delete("/:id", deleteCity)
+  .post("/", createCity)
+  .put("/:id", updateCity);
+
+export default citiesRouter;

@@ -1,8 +1,14 @@
-import { CityPage } from '../models/CityPage.js'
-import { CRUDOpertion, createCRUDHandler } from '../utils/CRUD.js'
+import { CityPage } from "../models/CityPage.js";
+import {
+  createDocument,
+  deleteDocument,
+  getAllDocuments,
+  getOneDocument,
+  updateDocument,
+} from "../utils/CRUD.js";
 
-export const getAllCities = createCRUDHandler(CityPage, CRUDOpertion.GET_ALL)
-export const getOneCity = createCRUDHandler(CityPage, CRUDOpertion.GET_BY_ID)
-export const deleteCity = createCRUDHandler(CityPage, CRUDOpertion.DELETE)
-export const createCity = createCRUDHandler(CityPage, CRUDOpertion.CREATE)
-export const updateCity = createCRUDHandler(CityPage, CRUDOpertion.UPDATE)
+export const getAllCities = getAllDocuments(CityPage);
+export const getOneCity = getOneDocument(CityPage);
+export const createCity = createDocument(CityPage);
+export const deleteCity = deleteDocument(CityPage);
+export const updateCity = updateDocument(CityPage);

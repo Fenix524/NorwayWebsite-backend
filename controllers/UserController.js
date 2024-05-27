@@ -1,14 +1,20 @@
 import { User } from "../models/User.js";
-import { createCRUDHandler, CRUDOpertion } from "../utils/CRUD.js";
 import { asyncWrapper } from "../utils/asyncWrapper.js";
 
-import { signToken } from "../services/jwtServices.js";
+import { checkToken, signToken } from "../services/jwtServices.js";
 import { v4 as uuidv4 } from "uuid";
 import HttpError from "../utils/HttpError.js";
 import {
   passwordDecryption,
   passwordEncryption,
 } from "../services/passwordHashService.js";
+import {
+  createDocument,
+  deleteDocument,
+  getAllDocuments,
+  getOneDocument,
+  updateDocument,
+} from "../utils/CRUD.js";
 
 export const login = asyncWrapper(async (req, res, next) => {
   const userData = req.body;
@@ -24,8 +30,11 @@ export const login = asyncWrapper(async (req, res, next) => {
   const jwtToken = signToken(ourUser._id);
   console.log(jwtToken);
 
+  ourUser.token = jwtToken;
+  ourUser.save();
+
   res.status(200).json({
-    user: { password, ...ourUser._doc },
+    user: { ...ourUser._doc },
     token: jwtToken,
   });
 });
@@ -49,6 +58,9 @@ export const signup = asyncWrapper(async (req, res, next) => {
 
   const jwtToken = signToken(newUser._id);
 
+  newUser.token = jwtToken;
+  newUser.save();
+
   // sendVerifyMail(verificationToken)
 
   res.status(201).json({
@@ -56,10 +68,23 @@ export const signup = asyncWrapper(async (req, res, next) => {
     token: jwtToken,
   });
 });
-export const getMe = asyncWrapper(async (req, res, next) => {});
+export const getMe = asyncWrapper(async (req, res, next) => {
+  const token =
+    req.headers.authorization?.startsWith("Bearer ") &&
+    req.headers.authorization.split(" ")[1];
 
-export const getAllUsers = createCRUDHandler(User, CRUDOpertion.GET_ALL);
-export const getOneUser = createCRUDHandler(User, CRUDOpertion.GET_BY_ID);
-export const deleteUser = createCRUDHandler(User, CRUDOpertion.DELETE);
-export const createUser = createCRUDHandler(User, CRUDOpertion.CREATE);
-export const updateUser = createCRUDHandler(User, CRUDOpertion.UPDATE);
+  const userId = checkToken(token);
+  if (!userId) return next(HttpError(401));
+
+  const currentUser = await User.findById(userId);
+
+  if (!currentUser || currentUser.token !== token) return next(HttpError(401));
+
+  res.status(200).json(currentUser);
+});
+
+export const getAllUsers = getAllDocuments(User);
+export const getOneUser = getOneDocument(User);
+export const deleteUser = createDocument(User);
+export const createUser = deleteDocument(User);
+export const updateUser = updateDocument(User);
