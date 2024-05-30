@@ -15,6 +15,7 @@ import {
   getOneDocument,
   updateDocument,
 } from "../utils/CRUD.js";
+import { updateMeService } from "../services/userService.js";
 
 export const login = asyncWrapper(async (req, res, next) => {
   const userData = req.body;
@@ -41,8 +42,8 @@ export const login = asyncWrapper(async (req, res, next) => {
 
 export const signup = asyncWrapper(async (req, res, next) => {
   const userData = req.body;
-  const { email, password } = userData;
-  console.log(userData);
+  const { name, email, password } = userData;
+  console.log("UserData", userData);
 
   const ourUser = await User.findOne({ email });
   if (ourUser) return next(HttpError(409, "Email in use"));
@@ -68,23 +69,49 @@ export const signup = asyncWrapper(async (req, res, next) => {
     token: jwtToken,
   });
 });
+
+export const logout = asyncWrapper(async (req, res, next) => {
+  const currentUser = req.user;
+  console.log("start logout", currentUser);
+
+  currentUser.token = null;
+  await currentUser.save();
+
+  console.log(currentUser);
+
+  res.status(200).json({ message: "Logged out successfully" });
+});
+
 export const getMe = asyncWrapper(async (req, res, next) => {
+  console.log("Початок", req.headers);
+
   const token =
     req.headers.authorization?.startsWith("Bearer ") &&
     req.headers.authorization.split(" ")[1];
 
+  console.log("Токен", token);
+
   const userId = checkToken(token);
   if (!userId) return next(HttpError(401));
 
+  console.log("Ід", userId);
+
   const currentUser = await User.findById(userId);
+
+  console.log("Користувач", currentUser);
 
   if (!currentUser || currentUser.token !== token) return next(HttpError(401));
 
   res.status(200).json(currentUser);
 });
 
+export const updateMe = asyncWrapper(async (req, res, next) => {
+  const updatedUser = await updateMeService(req.body, req.user, req.file);
+  res.status(200).json(req.user);
+});
+
 export const getAllUsers = getAllDocuments(User);
 export const getOneUser = getOneDocument(User);
-export const deleteUser = createDocument(User);
-export const createUser = deleteDocument(User);
+export const deleteUser = deleteDocument(User);
+export const createUser = createDocument(User);
 export const updateUser = updateDocument(User);

@@ -9,17 +9,28 @@ import {
   signup,
   updateUser,
 } from "../controllers/UserController.js";
-import { protect } from "../middlewares/protect.js";
+import { creatorProtect, protect } from "../middlewares/protect.js";
 import { userRoles } from "../constants/userRoles.js";
+import { User } from "../models/User.js";
 
 const userRouter = express.Router();
 
 userRouter.get("/", getAllUsers);
 userRouter.get("/:id", getOneUser);
 
-userRouter.use(protect([userRoles.ADMIN]));
-userRouter.post("/", createUser);
-userRouter.put("/:id", updateUser);
-userRouter.delete("/:id", deleteUser);
+userRouter.post("/", protect([userRoles.ADMIN]), createUser);
+userRouter.put(
+  "/:id",
+  protect([userRoles.ADMIN, userRoles.USER]),
+  creatorProtect(User, "_id"),
+  updateUser
+);
+
+userRouter.delete(
+  "/:id",
+  protect([userRoles.ADMIN, userRoles.USER]),
+  creatorProtect(User, "_id"),
+  deleteUser
+);
 
 export default userRouter;

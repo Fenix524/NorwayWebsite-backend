@@ -26,16 +26,67 @@ export const getAllBookmarks = asyncWrapper(async (req, res, next) => {
   });
 });
 
-export const getOneBookmark = asyncWrapper(async (req, res, next) => {
+export const getUserBookmark = asyncWrapper(async (req, res, next) => {
   const userId = req.user._id;
+
+  const bookmark = await Bookmark.findOne({ user: userId });
+  if (!bookmark) return next(HttpError(404));
+
+  // Use Promise.all to await all promises and then map over the resolved values
+  const populatedPages = await Promise.all(
+    bookmark.pages.map(async (id) => {
+      const city = await CityPage.findById(id);
+      if (city) return city;
+
+      const landmark = await LandmarkPage.findById(id);
+      if (landmark) return landmark;
+
+      return null;
+    })
+  );
+
+  // Filter out null values
+  const filteredPages = populatedPages.filter((page) => page !== null);
+
+  const newObj = { ...bookmark._doc };
+
+  // Assign filteredPages back to bookmark.pages
+  newObj.populatedPages = filteredPages;
+
+  console.log({ newObj });
+
+  res.status(200).json(newObj);
+});
+
+export const toggleBookmark = asyncWrapper(async (req, res, next) => {
   const { id: pageId } = req.params;
+  const userId = req.user._id;
 
-  const bookmark = Bookmark.findOne({ user: userId });
+  if (!pageId) {
+    return next(HttpError(400, "Потрібно вказати pageId."));
+  }
 
-  const city = await getOneCity(pageId);
-  const landmark = await getOneLandmark(pageId);
+  let bookmark = await Bookmark.findOne({ user: userId });
 
-  res.status(200).json(city || landmark);
+  if (!bookmark) {
+    // Create a new bookmark if it doesn't exist
+    bookmark = await Bookmark.create({
+      user: userId,
+      pages: [pageId],
+    });
+    return res.status(201).json(bookmark);
+  }
+
+  if (bookmark.pages.includes(pageId)) {
+    // Remove the bookmark if it already exists
+    bookmark.pages.pull(pageId);
+  } else {
+    // Add the bookmark if it doesn't exist
+    bookmark.pages.push(pageId);
+  }
+
+  await bookmark.save();
+  res.status(200).json(bookmark);
 });
 
 export const addToBookmarks = asyncWrapper(async (req, res, next) => {

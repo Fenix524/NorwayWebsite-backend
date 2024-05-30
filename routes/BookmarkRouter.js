@@ -4,16 +4,18 @@ import { userRoles } from "../constants/userRoles.js";
 import {
   addToBookmarks,
   getAllBookmarks,
-  getOneBookmark,
+  getUserBookmark,
   removeFromBookmarks,
+  toggleBookmark,
 } from "../controllers/BookmarkController.js";
 
 const bookmarkRouter = express.Router();
 
 bookmarkRouter.use(protect());
 bookmarkRouter.get("/", getAllBookmarks);
-bookmarkRouter.get("/:id", getOneBookmark);
+bookmarkRouter.get("/me", getUserBookmark);
 bookmarkRouter.post("/", addToBookmarks);
+bookmarkRouter.put("/:id", toggleBookmark);
 bookmarkRouter.delete("/:id", removeFromBookmarks);
 
 export default bookmarkRouter;

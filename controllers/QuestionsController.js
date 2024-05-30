@@ -11,12 +11,10 @@ import { asyncWrapper } from "../utils/asyncWrapper.js";
 export const askQuestion = asyncWrapper(async (req, res, next) => {
   const { question } = req.body;
 
-  // Перевірка валідності даних
   if (!question) {
     return res.status(400).json({ message: "Потрібно вказати питання." });
   }
 
-  // Створення нового питання
   const newQuestion = await QuestionAnswer.create({
     question,
     askedBy: req.user._id,
@@ -24,100 +22,76 @@ export const askQuestion = asyncWrapper(async (req, res, next) => {
 
   if (!newQuestion) return next(HttpError(400, "Помилка створення питання"));
 
-  res.status(201).json(newQuestion);
+  // Fetch the newly created question with population
+  const populatedQuestion = await QuestionAnswer.findById(newQuestion._id)
+    .populate("askedBy")
+    .populate("answers.answeredBy");
+
+  res.status(201).json(populatedQuestion);
 });
 
 export const answerQuestion = asyncWrapper(async (req, res, next) => {
   const { answer } = req.body;
   const { questionId } = req.params;
 
-  // Перевірка валідності даних
   if (!answer || !questionId) {
     return res
       .status(400)
       .json({ message: "Потрібно вказати answer та questionId." });
   }
 
-  // Пошук питання
-
   const question = await QuestionAnswer.findById(questionId);
   if (!question) {
     return res.status(404).json({ message: "Питання не знайдено." });
   }
 
-  // Додати нову відповідь
   question.answers.push({
     answer,
     answeredBy: req.user._id,
     answeredAt: Date.now(),
   });
 
-  // Оновлення питання в базі даних
   await question.save();
-  res.status(200).json(question);
+
+  const populatedQuestion = await QuestionAnswer.findById(questionId)
+    .populate("askedBy")
+    .populate("answers.answeredBy");
+
+  res.status(200).json(populatedQuestion);
 });
 
 // ==============================================================================================
 
-export const getOneQuestion = getOneDocument(QuestionAnswer);
+export const getOneQuestion = getOneDocument(QuestionAnswer, undefined, [
+  "askedBy",
+  "answers.answeredBy",
+]);
 
 export const updateQuestion = updateDocument(QuestionAnswer);
 
 export const deleteQuestion = deleteDocument(QuestionAnswer);
 
-export const getAllQuestions = asyncWrapper(async (req, res, next) => {
-  const { page = 1, limit = 20, search } = req.query;
-
-  try {
-    let query = QuestionAnswer.find();
-
-    if (search) {
-      query = query.where("question").regex(new RegExp(search, "i"));
-    }
-
-    const questions = await query
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
-
-    const count = await QuestionAnswer.countDocuments();
-
-    res.json({
-      questions,
-      totalPages: Math.ceil(count / limit),
-      currentPage: page,
-    });
-  } catch (error) {
-    console.error("Error while fetching questions:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+export const getAllQuestions = getAllDocuments(QuestionAnswer, [
+  "askedBy",
+  "answers.answeredBy",
+]);
 
 export const likeQuestion = asyncWrapper(async (req, res, next) => {
   const { questionId } = req.params;
   const { _id: userId } = req.user;
 
-  const currentQuestion = await QuestionAnswer.findById(questionId);
+  const currentQuestion = await QuestionAnswer.findById(questionId)
+    .populate("askedBy")
+    .populate("answers.answeredBy");
 
   if (!currentQuestion) return next(HttpError(404));
-  if (currentQuestion.likes.includes(userId)) return next(HttpError(409));
-
-  currentQuestion.likes.push(userId);
-  await currentQuestion.save();
-
-  res.status(200).json(currentQuestion);
-});
-
-export const diselikeQuestion = asyncWrapper(async (req, res, next) => {
-  const { questionId } = req.params;
-  const { _id: userId } = req.user;
-
-  const currentQuestion = await QuestionAnswer.findById(questionId);
-  if (!currentQuestion) {
-    return next(HttpError(404));
+  if (currentQuestion.likes.includes(userId)) {
+    currentQuestion.likes.pull(userId);
+    await currentQuestion.save();
+    return res.status(200).json(currentQuestion);
   }
 
-  currentQuestion.likes.pull(userId);
+  currentQuestion.likes.push(userId);
   await currentQuestion.save();
 
   res.status(200).json(currentQuestion);
@@ -165,36 +139,28 @@ export const likeAnswer = asyncWrapper(async (req, res, next) => {
 
   console.log({ questionId, answerId });
 
-  const currentQuestion = await QuestionAnswer.findById(questionId);
+  const currentQuestion = await QuestionAnswer.findById(questionId)
+    .populate("askedBy")
+    .populate("answers.answeredBy");
 
-  if (!currentQuestion) return next(HttpError(404));
-
-  const currentAnswer = currentQuestion.answers.find(
-    (answer) => answer.id === answerId
-  );
-  if (!currentAnswer) return next(HttpError(404));
-
-  if (currentAnswer.likes.includes(userId)) return next(HttpError(409));
-
-  currentAnswer.likes.push(userId);
-  await currentQuestion.save();
-
-  res.status(200).json(currentQuestion);
-});
-
-export const diselikeAnswer = asyncWrapper(async (req, res, next) => {
-  const { questionId, answerId } = req.params;
-  const { _id: userId } = req.user;
-
-  const currentQuestion = await QuestionAnswer.findById(questionId);
-
-  if (!currentQuestion) return next(HttpError(404));
+  if (!currentQuestion) {
+    return next(HttpError(404, "Question not found"));
+  }
 
   const currentAnswer = currentQuestion.answers.find(
     (answer) => answer.id === answerId
   );
 
-  currentAnswer.likes.pull(userId);
+  if (!currentAnswer) {
+    return next(HttpError(404, "Answer not found"));
+  }
+
+  if (currentAnswer.likes.includes(userId)) {
+    currentAnswer.likes.pull(userId);
+  } else {
+    currentAnswer.likes.push(userId);
+  }
+
   await currentQuestion.save();
 
   res.status(200).json(currentQuestion);

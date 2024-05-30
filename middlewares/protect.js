@@ -3,10 +3,12 @@ import { User } from "../models/User.js";
 import { checkToken } from "../services/jwtServices.js";
 import HttpError from "../utils/HttpError.js";
 import { asyncWrapper } from "../utils/asyncWrapper.js";
+import { userRoles } from "../constants/userRoles.js";
 
 // Middleware function to protect routes based on user roles
 export const protect = (userRoleArr) => {
   return asyncWrapper(async (req, res, next) => {
+    console.log("Start protect");
     // Get the token from the Authorization header
     const token =
       req.headers.authorization?.startsWith("Bearer ") &&
@@ -36,12 +38,18 @@ export const protect = (userRoleArr) => {
     }
 
     req.user = currentUser;
+    console.log("End protect");
     next();
   });
 };
 
 export const creatorProtect = (model, authorField = "askedBy") => {
   return asyncWrapper(async (req, res, next) => {
+    if (req.user.role === userRoles.ADMIN) {
+      console.log("Но ладно Адмін, проходи");
+      return next();
+    }
+
     const param = Object.values(req.params)[0];
 
     const curentPost = await model.findById(param);

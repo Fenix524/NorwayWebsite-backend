@@ -6,6 +6,9 @@ const questionAnswerSchema = new Schema(
       type: String,
       required: [true, "Питання є обов'язковим"],
     },
+    detailQuestion: {
+      type: String,
+    },
     askedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",

@@ -9,6 +9,6 @@ import {
 
 export const getAllLandmarks = getAllDocuments(LandmarkPage);
 export const getOneLandmark = getOneDocument(LandmarkPage);
-export const deleteLandmark = createDocument(LandmarkPage);
-export const createLandmark = deleteDocument(LandmarkPage);
+export const deleteLandmark = deleteDocument(LandmarkPage);
+export const createLandmark = createDocument(LandmarkPage);
 export const updateLandmark = updateDocument(LandmarkPage);

@@ -6,8 +6,6 @@ import {
   askQuestion,
   deleteAnswer,
   deleteQuestion,
-  diselikeAnswer,
-  diselikeQuestion,
   getAllQuestions,
   getOneQuestion,
   likeAnswer,
@@ -20,18 +18,16 @@ import { QuestionAnswer } from "../models/Questions.js";
 
 const questionRouter = express.Router();
 
-questionRouter.get("/answer", getAllQuestions);
-questionRouter.get("/answer/:questionId", getOneQuestion);
+questionRouter.get("/", getAllQuestions);
+questionRouter.get("/:questionId", getOneQuestion);
 //<<<=====================================================================================================>>>//
 
 questionRouter.use(protect());
-questionRouter.post("/ask", askQuestion);
-questionRouter.post("/ask/like/:questionId", likeQues tion);
-questionRouter.post("/ask/diselike/:questionId", diselikeQuestion);
+questionRouter.post("/", askQuestion);
+questionRouter.post("/like/:questionId", likeQuestion);
 
-questionRouter.post("/answer/:questionId/:answerId", answerQuestion);
-questionRouter.post("/answer/like/:questionId/:answerId", likeAnswer);
-questionRouter.post("/answer/diselike/:questionId/:answerId", diselikeAnswer);
+questionRouter.post("/answers/:questionId", answerQuestion);
+questionRouter.post("/answers/like/:questionId/:answerId", likeAnswer);
 
 //<<<=====================================================================================================>>>//
 questionRouter.use(
