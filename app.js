@@ -16,6 +16,7 @@ import questionRouter from "./routes/QuestionRouter.js";
 import { promises as fs } from "fs";
 import cors from "cors";
 import multer from "multer";
+import uploadRouter from "./routes/uploadRouter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,20 +53,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(join(__dirname, "public")));
 
-app.post("/upload", upload.single("picture"), async (req, res, next) => {
-  console.log(req.file);
-  const { description } = req.body;
-  const { path: temporaryName, originalname } = req.file;
-  const fileName = path.join(join(__dirname, "public"), originalname);
-  try {
-    await fs.rename(temporaryName, fileName);
-  } catch (err) {
-    await fs.unlink(temporaryName);
-    return next(err);
-  }
-  res.json({ description, message: "Файл успішно завантажено", status: 200 });
-});
-
 // New route to serve images
 app.get("/images/:filename", (req, res, next) => {
   const { filename } = req.params;
@@ -84,6 +71,7 @@ app.use("/", indexRouter);
 app.use("/auth", authRouter);
 
 app.use("/users", userRouter);
+app.use("/upload", uploadRouter);
 app.use("/cities", citiesRouter);
 app.use("/landmarks", landmarksRouter);
 app.use("/questions", questionRouter);
