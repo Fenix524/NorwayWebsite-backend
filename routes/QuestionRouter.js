@@ -12,7 +12,7 @@ import {
   likeQuestion,
   updateAnswer,
   updateQuestion,
-} from "../controllers/questionsController.js";
+} from "../controllers/QuestionsController.js";
 import { userRoles } from "../constants/userRoles.js";
 import { QuestionAnswer } from "../models/Questions.js";
 
